@@ -1,6 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
+## Screenshot
+
+![EMS Dashboard Screenshot](https://via.placeholder.com/800x400?text=My+Project+Screenshot)
+<img width="421" height="430" alt="Screenshot 2026-10-15 at 12 19 52 AM" src="https://github.com/user-attachments/assets/ece79012-7d05-4c5d-8ac7-13181fe4650f" />
+<img width="1680" height="1050" alt="Screenshot 2026-10-15 at 12 15 11 AM" src="https://github.com/user-attachments/assets/38e7fd69-50bf-4809-a4a7-de600c90a4d7" />
+
 
 First, run the development server:
 
