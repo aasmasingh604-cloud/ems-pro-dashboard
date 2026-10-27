@@ -1,77 +1,141 @@
-"use client";
+ "use client";
 import { useState, useEffect } from "react";
 
 export default function Page() {
   const [list, setList] = useState([]);
-  const [photo, setPhoto] = useState("");
-  const [form, setForm] = useState({ id:"", name:"", email:"", phone:"", dept:"HR", comp:"", sal:"", loc:"", addr:"", note:"" });
   const [search, setSearch] = useState("");
+  const [form, setForm] = useState({
+    id: "", empId: "", name: "", email: "", phone: "", 
+    dept: "HR", comp: "TCS", sal: "", address: "", photo: ""
+  });
+  const [isEdit, setIsEdit] = useState(false);
 
+  // Load - permanent save
   useEffect(() => {
-    const saved = localStorage.getItem("ems_vercel_final");
-    if (saved) setList(JSON.parse(saved));
+    const saved = localStorage.getItem("ems-final-permanent");
+    if (saved) {
+      try { setList(JSON.parse(saved)); } catch(e){}
+    }
   }, []);
+
+  // Save - auto permanent
   useEffect(() => {
-    localStorage.setItem("ems_vercel_final", JSON.stringify(list));
+    localStorage.setItem("ems-final-permanent", JSON.stringify(list));
   }, [list]);
 
   const handlePhoto = (e) => {
-    const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader(); r.onload = (ev) => setPhoto(ev.target.result); r.readAsDataURL(f);
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setForm({ ...form, photo: reader.result });
+    reader.readAsDataURL(file);
   };
 
-  const addEmp = () => {
-    if(!form.name || !form.email || !form.sal) return alert("Name, Email, Salary bharo");
-    setList([...list, { ...form, photo, id: form.id || "EMP"+Date.now().toString().slice(-4) }]);
-    setForm({ id:"", name:"", email:"", phone:"", dept:"HR", comp:"", sal:"", loc:"", addr:"", note:"" }); setPhoto("");
+  const handleSubmit = () => {
+    if (!form.name || !form.empId || !form.email) {
+      alert("Employee ID, Name, Email compulsory hai!");
+      return;
+    }
+    if (isEdit) {
+      setList(list.map((x) => (x.id === form.id ? form : x)));
+      setIsEdit(false);
+    } else {
+      setList([...list, { ...form, id: Date.now().toString() }]);
+    }
+    setForm({ id: "", empId: "", name: "", email: "", phone: "", dept: "HR", comp: "TCS", sal: "", address: "", photo: "" });
   };
 
-  const removeEmp = (i) => {
-    if(!confirm("Delete "+list[i].name+"?")) return;
-    const p = prompt("DELETE likho tabhi delete hoga:"); if(p!=="DELETE") return;
-    setList(list.filter((_, idx)=> idx!==i));
+  const editEmp = (item) => {
+    setForm(item);
+    setIsEdit(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const filtered = list.filter(x => (x.name+x.email+x.id+x.comp).toLowerCase().includes(search.toLowerCase()));
-  const total = list.reduce((a,b)=>a+Number(b.sal||0),0);
+  const removeEmp = (id) => {
+    if (confirm("Delete karna hai?")) {
+      setList(list.filter((x) => x.id !== id));
+    }
+  };
+
+  const filtered = list.filter(emp => 
+    emp.name.toLowerCase().includes(search.toLowerCase()) ||
+    emp.empId.toLowerCase().includes(search.toLowerCase()) ||
+    emp.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalSal = list.reduce((a, b) => a + (Number(b.sal) || 0), 0);
 
   return (
-    <div style={{background:"#0a0a0a", minHeight:"100vh", color:"#fff", padding:12, fontFamily:"system-ui"}}>
-      <h3>⚡ EMS Dashboard 🔒 Auto-Save ON</h3>
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, margin:"14px 0"}}>
-        <div style={{background:"#171717", padding:14, borderRadius:14, borderTop:"3px solid #3b82f6"}}><h2>{list.length}</h2><p style={{fontSize:11, color:"#888"}}>Total</p></div>
-        <div style={{background:"#171717", padding:14, borderRadius:14, borderTop:"3px solid #22c55e"}}><h2>{new Set(list.map(x=>x.dept)).size}</h2><p style={{fontSize:11, color:"#888"}}>Depts</p></div>
-        <div style={{background:"#171717", padding:14, borderRadius:14, borderTop:"3px solid #f97316"}}><h2>₹ {total.toLocaleString("en-IN")}</h2><p style={{fontSize:11, color:"#888"}}>Payroll</p></div>
+    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "system-ui" }}>
+      <div style={{ background: "#0f172a", color: "white", padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <b>⚡ EMS PRO - Permanent Storage</b>
+        <input placeholder="🔍 Search ID / Name / Email" value={search} onChange={e=>setSearch(e.target.value)} style={{ padding: "8px 14px", borderRadius: "20px", border: "none", width: "250px" }} />
       </div>
 
-      <div style={{background:"#171717", padding:16, borderRadius:16, border:"1px solid #262626"}}>
-        <label style={{fontSize:10, color:"#777"}}>Profile Photo</label><input type="file" accept="image/*" onChange={handlePhoto} style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9, marginTop:4}} />
-        {photo && <img src={photo} style={{width:60, height:60, borderRadius:"50%", marginTop:8}} />}
-        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:8}}>
-          <div><label style={{fontSize:10, color:"#777"}}>Employee ID</label><input value={form.id} onChange={e=>setForm({...form,id:e.target.value})} placeholder="EMP001" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Full Name *</label><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Name" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Email ID *</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Phone Number *</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="Phone" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Department</label><select value={form.dept} onChange={e=>setForm({...form,dept:e.target.value})} style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}}><option>HR</option><option>IT</option><option>Finance</option><option>Marketing</option></select></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Company</label><input value={form.comp} onChange={e=>setForm({...form,comp:e.target.value})} placeholder="Company" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Salary *</label><input type="number" value={form.sal} onChange={e=>setForm({...form,sal:e.target.value})} placeholder="50000" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
-          <div><label style={{fontSize:10, color:"#777"}}>Location</label><input value={form.loc} onChange={e=>setForm({...form,loc:e.target.value})} placeholder="Delhi" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} /></div>
+      <div style={{ padding: "20px", maxWidth: "1100px", margin: "auto" }}>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }}>
+          <div style={{ background: "white", padding: "16px", borderRadius: "12px", borderLeft: "5px solid #3b82f6" }}><h2 style={{ margin: 0 }}>{list.length}</h2><small style={{ color: "#64748b" }}>Total Employees</small></div>
+          <div style={{ background: "white", padding: "16px", borderRadius: "12px", borderLeft: "5px solid #10b981" }}><h2 style={{ margin: 0 }}>{new Set(list.map(x => x.dept)).size}</h2><small style={{ color: "#64748b" }}>Departments</small></div>
+          <div style={{ background: "white", padding: "16px", borderRadius: "12px", borderLeft: "5px solid #f59e0b" }}><h2 style={{ margin: 0 }}>₹{totalSal}</h2><small style={{ color: "#64748b" }}>Total Payroll</small></div>
         </div>
-        <label style={{fontSize:10, color:"#777", marginTop:8, display:"block"}}>Full Address</label><textarea value={form.addr} onChange={e=>setForm({...form,addr:e.target.value})} placeholder="Address" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} rows={2}></textarea>
-        <label style={{fontSize:10, color:"#777", marginTop:8, display:"block"}}>Comment</label><textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Note" style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9}} rows={1}></textarea>
-        <button onClick={addEmp} style={{width:"100%", padding:13, background:"#3b82f6", border:"none", borderRadius:10, color:"#fff", fontWeight:700, marginTop:12, cursor:"pointer"}}>+ Add Employee</button>
-      </div>
 
-      <div style={{background:"#171717", padding:10, borderRadius:16, border:"1px solid #262626", marginTop:16}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search..." style={{width:"100%", padding:11, background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#fff", borderRadius:9, marginBottom:10}} />
-        {filtered.map((e,i)=>(
-          <div key={i} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 8px", borderBottom:"1px solid #1f1f1f"}}>
-            <div style={{display:"flex", gap:10, alignItems:"center"}}><img src={e.photo||"https://i.pravatar.cc/100?u="+e.id} style={{width:42, height:42, borderRadius:"50%"}} /><div><b>{e.name}</b><br/><small style={{color:"#888"}}>{e.id} • {e.email}<br/>{e.phone} • {e.addr}</small></div></div>
-            <div><small style={{background:"#0f172a", color:"#60a5fa", padding:"3px 8px", borderRadius:20}}>{e.dept}</small><br/><b>{e.comp}</b><br/>₹ {Number(e.sal).toLocaleString("en-IN")}</div>
-            <button onClick={()=>removeEmp(list.indexOf(e))} style={{background:"#2a1515", color:"#ff5a5a", border:"1px solid #3a1a1a", padding:"6px 12px", borderRadius:8, cursor:"pointer"}}>Delete</button>
+        {/* Form */}
+        <div style={{ background: "white", padding: "20px", borderRadius: "16px", marginBottom: "20px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+          <h3 style={{ marginTop: 0 }}>{isEdit ? "Edit Employee" : "Add New Employee (Permanent Save)"}</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <input placeholder="Employee ID (e.g. EMP001)" value={form.empId} onChange={e => setForm({ ...form, empId: e.target.value })} style={inputStyle} />
+            <input placeholder="Full Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle} />
+            <input placeholder="Email ID" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inputStyle} />
+            <input placeholder="Contact Number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} style={inputStyle} />
+            <select value={form.dept} onChange={e => setForm({ ...form, dept: e.target.value })} style={inputStyle}>
+              <option>HR</option><option>IT</option><option>Sales</option><option>Finance</option><option>Marketing</option>
+            </select>
+            <input placeholder="Company" value={form.comp} onChange={e => setForm({ ...form, comp: e.target.value })} style={inputStyle} />
+            <input placeholder="Salary" type="number" value={form.sal} onChange={e => setForm({ ...form, sal: e.target.value })} style={inputStyle} />
+            <input placeholder="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} style={{...inputStyle, gridColumn:"span 2"}} />
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ fontSize: "13px", fontWeight: "bold" }}>Employee Photo:</label>
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ ...inputStyle, marginTop: "5px" }} />
+            </div>
           </div>
-        ))}
+          {form.photo && <img src={form.photo} style={{ width: "90px", height: "90px", borderRadius: "50%", marginTop: "12px", objectFit: "cover", border: "3px solid #3b82f6" }} />}
+          <div style={{ marginTop: "15px" }}>
+            <button onClick={handleSubmit} style={btnPrimary}>{isEdit ? "Update (Permanent)" : "+ Add & Save Permanently"}</button>
+            {isEdit && <button onClick={() => { setForm({ id: "", empId: "", name: "", email: "", phone: "", dept: "HR", comp: "TCS", sal: "", address: "", photo: "" }); setIsEdit(false); }} style={btnCancel}>Cancel</button>}
+          </div>
+          <p style={{ fontSize: "12px", color: "green", marginTop: "10px" }}>✓ Data browser me permanent save hoga. Refresh karne par bhi delete nahi hoga. Sirf Delete button se delete hoga.</p>
+        </div>
+
+        {/* Table */}
+        <div style={{ background: "white", borderRadius: "16px", overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+            <thead style={{ background: "#f8fafc", textAlign: "left", fontSize: "13px", color: "#64748b" }}><tr><th style={thStyle}>Photo</th><th style={thStyle}>Emp ID</th><th style={thStyle}>Name & Contact</th><th style={thStyle}>Email</th><th style={thStyle}>Address</th><th style={thStyle}>Salary</th><th style={thStyle}>Action</th></tr></thead>
+            <tbody>
+              {filtered.map(emp => (
+                <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={tdStyle}>{emp.photo ? <img src={emp.photo} style={{ width: "45px", height: "45px", borderRadius: "50%", objectFit: "cover" }} /> : <div style={{ width: "45px", height: "45px", borderRadius: "50%", background: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>👤</div>}</td>
+                  <td style={tdStyle}><b>{emp.empId}</b><div style={{ fontSize: "11px", color: "#64748b" }}>{emp.dept} | {emp.comp}</div></td>
+                  <td style={tdStyle}>{emp.name}<div style={{ fontSize: "12px", color: "#64748b" }}>{emp.phone}</div></td>
+                  <td style={tdStyle}><span style={{ fontSize: "13px" }}>{emp.email}</span></td>
+                  <td style={{ ...tdStyle, maxWidth: "150px", fontSize: "12px" }}>{emp.address || "—"}</td>
+                  <td style={tdStyle}>₹{emp.sal}</td>
+                  <td style={tdStyle}><button onClick={() => editEmp(emp)} style={editBtn}>Edit</button><button onClick={() => removeEmp(emp.id)} style={delBtn}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <div style={{ padding: "30px", textAlign: "center", color: "gray" }}>No data. Add employee upar se.</div>}
+        </div>
       </div>
     </div>
   );
 }
+
+const inputStyle = { padding: "12px", border: "1px solid #cbd5e1", borderRadius: "8px", outline: "none" };
+const thStyle = { padding: "12px" };
+const tdStyle = { padding: "12px", fontSize: "14px" };
+const btnPrimary = { background: "#2563eb", color: "white", padding: "12px 24px", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" };
+const btnCancel = { marginLeft: "10px", padding: "12px 18px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer" };
+const editBtn = { color: "#2563eb", background: "none", border: "none", cursor: "pointer", marginRight: "10px", fontWeight: "bold" };
+const delBtn = { color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontWeight: "bold" };
