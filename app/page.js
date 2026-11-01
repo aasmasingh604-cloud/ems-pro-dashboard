@@ -1,17 +1,104 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
-export default function Page() {
-  const [list, setList] = useState([]);
-  const [search, setSearch] = useState("");
-  const [form, setForm] = useState({ id:"", empId:"", name:"", email:"", phone:"", dept:"HR", customDept:"", comp:"", sal:"", address:"", photo:"" });
-  const [isEdit, setIsEdit] = useState(false);
-  const DEPTS = ["HR","IT","Sales","Finance","Marketing","Manager","Working","Operations","Support","Admin","Designer","Developer","QA","Intern","Accounts","Production","Other"];
-  const load = async () => { try{ const r=await fetch("/api/employees",{cache:"no-store"}); const d=await r.json(); setList(Array.isArray(d)?d:[]);}catch(e){} };
-  useEffect(()=>{ load(); },[]);
-  const handlePhoto = (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onloadend=()=>setForm({...form, photo:r.result}); r.readAsDataURL(f); };
-  const handleSubmit = async ()=>{ if(!form.name||!form.empId) return alert("Name & Emp ID required"); let finalDept=form.dept==="Other"?form.customDept:form.dept; if(!finalDept) return alert("Dept likho"); const finalForm={...form, dept:finalDept}; if(isEdit){ await fetch("/api/employees",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(finalForm)}); setIsEdit(false);} else { const newEmp={...finalForm, id:Date.now().toString()}; await fetch("/api/employees",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(newEmp)});} setForm({id:"", empId:"", name:"", email:"", phone:"", dept:"HR", customDept:"", comp:"", sal:"", address:"", photo:""}); load(); };
-  const totalEmp=list.length; const totalDepts=new Set(list.map(x=>(x.dept||"").trim().toLowerCase()).filter(Boolean)).size; const totalPayroll=list.reduce((a,b)=>a+(Number(b.sal)||0),0);
-  const filtered=useMemo(()=>{ if(!search) return list; const q=search.toLowerCase(); return list.filter(e=>(e.name||"").toLowerCase().includes(q)||(e.empId||"").toLowerCase().includes(q)||(e.dept||"").toLowerCase().includes(q)); },[list,search]);
-  return (<div style={{minHeight:"100vh", background:"#f6f6f7", fontFamily:"system-ui", padding:"14px"}}><div style={{maxWidth:"1200px", margin:"auto"}}><div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"12px", marginBottom:"14px"}}><div style={{background:"white", borderRadius:"12px", padding:"16px", borderLeft:"4px solid #3b82f6"}}><div style={{fontSize:"24px", fontWeight:"800"}}>{totalEmp}</div><div style={{fontSize:"13px", color:"#6b7280"}}>Total Employees</div></div><div style={{background:"white", borderRadius:"12px", padding:"16px", borderLeft:"4px solid #22c55e"}}><div style={{fontSize:"24px", fontWeight:"800"}}>{totalDepts}</div><div style={{fontSize:"13px", color:"#6b7280"}}>Departments</div></div><div style={{background:"white", borderRadius:"12px", padding:"16px", borderLeft:"4px solid #f97316"}}><div style={{fontSize:"24px", fontWeight:"800"}}>₹{totalPayroll.toLocaleString()}</div><div style={{fontSize:"13px", color:"#6b7280"}}>Total Payroll</div></div></div><div style={{background:"white", borderRadius:"12px", padding:"12px", marginBottom:"14px", display:"flex", gap:"10px"}}><input style={{flex:1, padding:"10px 14px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} placeholder="Search HR/IT/Manager/Working..." value={search} onChange={e=>setSearch(e.target.value)}/><div style={{padding:"10px", fontSize:"12px"}}>{filtered.length} found</div></div><div style={{background:"white", borderRadius:"12px", padding:"18px", marginBottom:"16px"}}><div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Employee ID *</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.empId} onChange={e=>setForm({...form, empId:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Name *</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.name} onChange={e=>setForm({...form, name:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Email</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.email} onChange={e=>setForm({...form, email:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Contact</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Department</label><select style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.dept} onChange={e=>setForm({...form, dept:e.target.value})}>{DEPTS.map(d=> <option key={d} value={d}>{d}</option>)}</select></div>{form.dept==="Other" && <div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Custom Dept</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.customDept} onChange={e=>setForm({...form, customDept:e.target.value})} placeholder="Manager, Working..."/></div>}<div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Company</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.comp} onChange={e=>setForm({...form, comp:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Salary</label><input type="number" style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.sal} onChange={e=>setForm({...form, sal:e.target.value})}/></div><div><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Address</label><input style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}} value={form.address} onChange={e=>setForm({...form, address:e.target.value})}/></div><div style={{gridColumn:"span 2"}}><label style={{display:"block", fontSize:"12px", color:"#6b7280", marginBottom:"4px"}}>Photo</label><input type="file" accept="image/*" onChange={handlePhoto} style={{width:"100%", padding:"9px 12px", border:"1.5px solid #e5e7eb", borderRadius:"8px"}}/></div></div><button onClick={handleSubmit} style={{marginTop:"14px", background:"#3b82f6", color:"white", padding:"10px 20px", border:"none", borderRadius:"8px", fontWeight:"600", cursor:"pointer"}}>{isEdit ? "Update" : "+ Add Employee"}</button></div><div style={{background:"white", borderRadius:"12px", overflow:"hidden"}}><div style={{overflowX:"auto"}}><table style={{width:"100%", borderCollapse:"collapse", minWidth:"950px"}}><thead><tr style={{background:"#fafafa", borderBottom:"1.5px solid #111", fontSize:"13px", color:"#6b7280", textAlign:"left"}}><th style={{padding:"12px 10px"}}>Photo</th><th style={{padding:"12px 10px"}}>Name/ID</th><th style={{padding:"12px 10px"}}>Dept</th><th style={{padding:"12px 10px"}}>Company</th><th style={{padding:"12px 10px"}}>Contact</th><th style={{padding:"12px 10px"}}>Salary</th><th style={{padding:"12px 10px"}}>Action</th></tr></thead><tbody>{filtered.map(emp=>(<tr key={emp.id} style={{borderBottom:"1px solid #f0f0f0"}}><td style={{padding:"12px 10px"}}>{emp.photo ? <img src={emp.photo} style={{width:"40px", height:"40px", borderRadius:"50%", objectFit:"cover"}}/> : <div style={{width:"40px", height:"40px", borderRadius:"50%", background:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"10px"}}>DP</div>}</td><td style={{padding:"12px 10px"}}><div style={{fontWeight:"600"}}>{emp.name}</div><div style={{fontSize:"11px", color:"#6b7280"}}>{emp.empId}</div></td><td style={{padding:"12px 10px", color:"#3b82f6", fontWeight:"600"}}>{emp.dept}</td><td style={{padding:"12px 10px"}}>{emp.comp}</td><td style={{padding:"12px 10px"}}>{emp.phone}</td><td style={{padding:"12px 10px"}}>₹{emp.sal}</td><td style={{padding:"12px 10px"}}><span onClick={()=>{setForm({...emp, customDept:""}); setIsEdit(true); window.scrollTo({top:0})}} style={{color:"#2563eb", cursor:"pointer", marginRight:"8px"}}>Edit</span><span onClick={async()=>{ if(confirm("Delete?")){ await fetch(`/api/employees?id=${emp.id}`, {method:"DELETE"}); load(); }}} style={{color:"#ef4444", cursor:"pointer"}}>Delete</span></td></tr>))}</tbody></table></div></div></div></div>
-  );
+import { useState, useEffect } from "react";
+const DEPARTMENTS = ["HR","Admin","Engineering","Sales","Marketing","Finance","Operations","IT Support","Design","Product","QA","Training","Internship","Management","Customer Support","Research","Others"];
+const ROLES = ["HR Executive","HR Manager","Admin Officer","Recruiter","Java Developer","React Dev","Node Dev","Python Dev","Full Stack","UI Designer","Sales Executive","Marketing Executive","Accountant","Support Engineer","Team Lead","Project Manager","Intern","Other"];
+export default function Page(){
+  const [view,setView]=useState("front");
+  const [form,setForm]=useState({name:"",email:"",phone:"",dept:"HR",role:"HR Executive",city:"",salary:"",photo:""});
+  const [list,setList]=useState([]);
+  const [preview,setPreview]=useState("");
+  const [companyName,setCompanyName]=useState("TechForce HRMS");
+  useEffect(()=>{
+    try{
+      const s=localStorage.getItem("ems_employees");
+      if(s) setList(JSON.parse(s));
+      const cn=localStorage.getItem("ems_company_name");
+      if(cn) setCompanyName(cn);
+    }catch(e){}
+  },[]);
+  const save=(newList)=>{
+    setList(newList);
+    localStorage.setItem("ems_employees",JSON.stringify(newList));
+  };
+  const onPhoto=(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      setPreview(r.result);
+      setForm({...form,photo:r.result});
+    };
+    r.readAsDataURL(file);
+  };
+  const handleSave=(e)=>{
+    e.preventDefault();
+    const data={...form,salary:Number(form.salary)||0,id:Date.now()};
+    save([...list,data]);
+    setForm({name:"",email:"",phone:"",dept:"HR",role:"HR Executive",city:"",salary:"",photo:""});
+    setPreview("");
+    setView("front");
+  };
+  const totalEmp=list.length;
+  const totalSalary=list.reduce((s,a)=>s+(Number(a.salary)||0),0);
+  const activeDepts=new Set(list.map(a=>a.dept)).size;
+  if(view==="front"){
+    return(
+      <div style={{minHeight:"100vh",background:"rgb(5,7,10)",color:"rgb(255,255,255)",padding:20}}>
+        <div style={{maxWidth:1000,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <input value={companyName} onChange={(e)=>{setCompanyName(e.target.value); localStorage.setItem("ems_company_name",e.target.value)}} style={{background:"transparent",border:"none",color:"rgb(255,255,255)",fontSize:22,fontWeight:"900",outline:"none",width:250}} />
+            <button onClick={()=>setView("form")} style={{padding:"12px 20px",background:"rgb(255,255,255)",color:"rgb(0,0,0)",border:"none",borderRadius:20,fontWeight:"800",cursor:"pointer"}}>+ Add Employee</button>
+          </div>
+          <div style={{background:"rgb(16,26,45)",borderRadius:24,padding:24,marginTop:20,border:"1px solid rgb(26,42,68)"}}>
+            <h2 style={{margin:0,fontSize:18,opacity:0.8}}>Professional management for unlimited employees</h2>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginTop:20}}>
+              <div style={{background:"rgb(42,59,94)",padding:18,borderRadius:16}}>
+                <div style={{fontSize:11,opacity:0.7}}>TOTAL EMPLOYEES</div>
+                <div style={{fontSize:36,fontWeight:"900"}}>{totalEmp}</div>
+                <div style={{fontSize:11,opacity:0.6}}>Working - {activeDepts} Active</div>
+              </div>
+              <div style={{background:"rgb(42,59,94)",padding:18,borderRadius:16}}>
+                <div style={{fontSize:11,opacity:0.7}}>TOTAL SALARY PAYOUT</div>
+                <div style={{fontSize:28,fontWeight:"900"}}>Rs {totalSalary.toLocaleString("en-IN")}</div>
+                <div style={{fontSize:11,opacity:0.6}}>Auto Monthly</div>
+              </div>
+              <div style={{background:"rgb(255,255,255)",color:"rgb(0,0,0)",padding:18,borderRadius:16}}>
+                <div style={{fontSize:11,opacity:0.7}}>DEPARTMENTS</div>
+                <div style={{fontSize:36,fontWeight:"900"}}>{activeDepts}</div>
+                <div style={{fontSize:11,opacity:0.6}}>Active - From 0</div>
+              </div>
+            </div>
+          </div>
+          <h3 style={{marginTop:20}}>All Employees ({totalEmp}) - {activeDepts} Depts Active</h3>
+          {totalEmp===0 ? <div style={{padding:20,textAlign:"center",opacity:0.5,border:"1px dashed gray",borderRadius:12}}>0 Employees - Start from 0</div> : null}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:10,marginTop:10}}>
+            {list.map(a=>(
+              <div key={a.id} style={{background:"rgb(17,26,42)",padding:12,borderRadius:12,display:"flex",gap:10,alignItems:"center",border:"1px solid rgb(26,35,51)"}}>
+                <img src={a.photo||"https://via.placeholder.com/50"} style={{width:48,height:48,borderRadius:10,objectFit:"cover"}} alt="emp" />
+                <div><b>{a.name}</b><div style={{fontSize:12,opacity:0.6}}>{a.dept} - Rs {a.salary}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+  return(
+    <div style={{maxWidth:450,margin:"20px auto",background:"rgb(17,26,42)",padding:20,borderRadius:16,color:"rgb(255,255,255)"}}>
+      <button onClick={()=>setView("front")} style={{background:"none",border:"none",color:"rgb(122,168,255)",cursor:"pointer"}}>Back</button>
+      <h3>Add Employee</h3>
+      <form onSubmit={handleSave} style={{display:"flex",flexDirection:"column",gap:10,marginTop:10}}>
+        {preview ? <img src={preview} style={{width:70,height:70,borderRadius:10,objectFit:"cover"}} alt="preview" /> : null}
+        <input type="file" accept="image/*" onChange={onPhoto} />
+        <input placeholder="Name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required style={inp} />
+        <input placeholder="Email" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required style={inp} />
+        <input placeholder="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} required style={inp} />
+        <input placeholder="Total Salary" type="number" value={form.salary} onChange={e=>setForm({...form,salary:e.target.value})} required style={inp} />
+        <select value={form.dept} onChange={e=>setForm({...form,dept:e.target.value})} style={inp}>{DEPARTMENTS.map(d=><option key={d} value={d}>{d}</option>)}</select>
+        <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} style={inp}>{ROLES.map(d=><option key={d}>{d}</option>)}</select>
+        <input placeholder="City" value={form.city} onChange={e=>setForm({...form,city:e.target.value})} required style={inp} />
+        <button type="submit" style={{padding:12,background:"rgb(42,123,255)",border:"none",borderRadius:10,color:"rgb(255,255,255)",fontWeight:"800",cursor:"pointer"}}>Save Employee</button>
+      </form>
+    </div>
+  )
 }
+const inp={padding:10,borderRadius:8,border:"1px solid gray",background:"rgb(10,15,26)",color:"rgb(255,255,255)",width:"100%"};

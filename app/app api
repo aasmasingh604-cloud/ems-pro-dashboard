@@ -1,0 +1,22 @@
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Employee from "@/models/Employee";
+
+export async function GET() {
+  await dbConnect();
+  const employees = await Employee.find().sort({ createdAt: -1 });
+  return NextResponse.json(employees);
+}
+export async function POST(req) {
+  await dbConnect();
+  const body = await req.json();
+  const emp = await Employee.create(body);
+  return NextResponse.json(emp);
+}
+export async function DELETE(req) {
+  await dbConnect();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  await Employee.findByIdAndDelete(id);
+  return NextResponse.json({ success: true });
+}
