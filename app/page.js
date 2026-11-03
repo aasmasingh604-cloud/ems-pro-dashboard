@@ -10,35 +10,34 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [customDept, setCustomDept] = useState("")
   const [showCustomInput, setShowCustomInput] = useState(false)
-  const [allDepts, setAllDepts] = useState(["IT", "HR", "Sales", "Marketing", "Finance", "Operations"])
+  const [allDepts, setAllDepts] = useState(["IT", "HR", "Sales", "Marketing", "Finance", "Operations", "Legal", "Support"])
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active"
+    name: "", email: "", phone: "", salary: "", address: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active"
   })
 
   useEffect(() => {
     if (localStorage.getItem("isAdmin") === "true") setIsAdmin(true)
-    const saved = JSON.parse(localStorage.getItem("ems-final-v3") || "[]")
-    const savedDepts = JSON.parse(localStorage.getItem("ems-depts") || "[]")
+    const saved = JSON.parse(localStorage.getItem("ems-full-v4") || "[]")
+    const savedDepts = JSON.parse(localStorage.getItem("ems-depts-v4") || "[]")
     if (savedDepts.length > 0) setAllDepts(savedDepts)
     if (saved.length === 0) {
-      const demo = [{ id: 1, name: "Neeraj Chopra", email: "neeraj@techforce.com", phone: "9876543210", salary: "75000", location: "Gurugram", role: "Developer", departments: ["IT"], photo: "https://i.pravatar.cc/150?u=11", status: "Active" }]
-      setEmployees(demo); localStorage.setItem("ems-final-v3", JSON.stringify(demo))
+      const demo = [{ id: 1, name: "Neeraj Chopra", email: "neeraj@techforce.com", phone: "9876543210", salary: "75000", address: "Sector 44, Gurugram", location: "Gurugram", role: "Developer", departments: ["IT", "Support"], photo: "https://i.pravatar.cc/150?u=11", status: "Active" }]
+      setEmployees(demo); localStorage.setItem("ems-full-v4", JSON.stringify(demo))
     } else setEmployees(saved)
   }, [])
 
-  const saveData = (data) => { localStorage.setItem("ems-final-v3", JSON.stringify(data)); setEmployees(data) }
+  const saveData = (data) => { localStorage.setItem("ems-full-v4", JSON.stringify(data)); setEmployees(data) }
+  const saveDepts = (d) => { setAllDepts(d); localStorage.setItem("ems-depts-v4", JSON.stringify(d)) }
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      // Agar detail page pe hai to wahi update kar do
       if (showDetail) {
         const updated = employees.map(ev => ev.id === showDetail.id ? { ...ev, photo: reader.result } : ev)
         saveData(updated)
         setShowDetail({ ...showDetail, photo: reader.result })
-        alert("Profile Photo Updated!")
       } else {
         setForm(p => ({ ...p, photo: reader.result }))
       }
@@ -48,10 +47,11 @@ export default function Home() {
 
   const handleSave = () => {
     if (!form.name || !form.salary || form.departments.length === 0) return alert("Name, Salary, Department required!")
+    if (!form.email || !form.phone || !form.address) return alert("Email, Phone, Address bhi bharna hai!")
     let newList = editId ? employees.map(ev => ev.id === editId ? { ...ev, ...form } : ev) : [...employees, { ...form, id: Date.now() }]
     saveData(newList)
-    setShowForm(false); setEditId(null); setShowCustomInput(false)
-    setForm({ name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active" })
+    setShowForm(false); setEditId(null); setShowCustomInput(false); setCustomDept("")
+    setForm({ name: "", email: "", phone: "", salary: "", address: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active" })
   }
 
   const handleDelete = (id) => {
@@ -65,21 +65,21 @@ export default function Home() {
   }
 
   const addCustomDept = () => {
-    if (!customDept.trim()) return
-    const newDepts = [...allDepts, customDept.trim()]
-    setAllDepts(newDepts); localStorage.setItem("ems-depts", JSON.stringify(newDepts))
+    if (!customDept.trim()) return alert("Naam likho!")
+    const nd = [...allDepts, customDept.trim()]
+    saveDepts(nd)
     setForm(p => ({ ...p, departments: [...p.departments, customDept.trim()] }))
     setCustomDept(""); setShowCustomInput(false)
   }
 
   const totalSalary = employees.reduce((s, ev) => s + (parseInt(ev.salary) || 0), 0)
   const allDeptsInUse = [...new Set(employees.flatMap(ev => ev.departments))]
-  const filtered = employees.filter(ev => ev.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = employees.filter(ev => ev.name.toLowerCase().includes(search.toLowerCase()) || ev.email.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className="min-h-screen bg-black text-white p-4 pb-24">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="font-bold text-xl">TechForce HRMS</h1>
+        <h1 className="font-bold text-xl">TechForce HRMS - FULL</h1>
         <button onClick={() => { localStorage.setItem("isAdmin", "true"); setIsAdmin(true) }} className="bg-[#0f172a] border border-gray-700 px-3 py-1.5 rounded-full text-xs">{isAdmin ? "Admin ✓" : "Admin Login"}</button>
       </div>
 
@@ -88,8 +88,13 @@ export default function Home() {
         <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800"><p className="text-gray-400 text-[11px]">Total Salary</p><p className="text-2xl font-bold">₹{totalSalary.toLocaleString()}</p></div>
       </div>
 
+      <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800 mb-4">
+        <p className="text-sm font-bold">Departments - {allDeptsInUse.length}</p>
+        <div className="flex flex-wrap gap-2 mt-2">{allDeptsInUse.map(d => <span key={d} className="bg-gray-800 px-3 py-1 rounded-full text-xs">{d} ({employees.filter(e => e.departments.includes(d)).length})</span>)}</div>
+      </div>
+
       <div className="flex gap-2 mb-4">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="flex-1 bg-[#0f172a] border border-gray-800 p-3 rounded-xl text-sm" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email..." className="flex-1 bg-[#0f172a] border border-gray-800 p-3 rounded-xl text-sm" />
         {isAdmin && <button onClick={() => setShowForm(true)} className="bg-blue-600 px-5 rounded-xl text-sm font-bold">+ Add</button>}
       </div>
 
@@ -97,7 +102,7 @@ export default function Home() {
         <div key={emp.id} className="bg-[#0f172a] p-4 rounded-2xl mb-3 flex justify-between items-center border border-gray-800">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setShowDetail(emp)}>
             <img src={emp.photo} className="w-12 h-12 rounded-full object-cover" />
-            <div><p className="font-bold text-sm">{emp.name}</p><p className="text-gray-400 text-xs">{emp.departments.join(", ")}</p></div>
+            <div><p className="font-bold text-sm">{emp.name}</p><p className="text-gray-400 text-xs">{emp.departments.join(", ")} • {emp.email}</p><p className="text-gray-500 text-[11px]">{emp.phone} • {emp.address}</p></div>
           </div>
           <span className="text-gray-500">›</span>
         </div>
@@ -109,74 +114,66 @@ export default function Home() {
             <button onClick={() => setShowDetail(null)} className="bg-gray-800 px-5 py-2.5 rounded-full text-sm">← Cancel</button>
             <button onClick={() => saveData(employees)} className="bg-green-600 px-5 py-2.5 rounded-full text-sm font-bold">Save ✓</button>
           </div>
-
           <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800">
-            {/* PROFILE UPDATE & CHANGE OPTION */}
             <div className="flex flex-col items-center">
               <img src={showDetail.photo} className="w-28 h-28 rounded-full mx-auto mb-3 border-2 border-blue-600 object-cover" />
               <div className="flex gap-2 mb-4">
-                <label className="bg-blue-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
-                  📸 Change Photo
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                </label>
-                <label className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
-                  🔄 Update
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                </label>
+                <label className="bg-blue-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">📸 Change Photo<input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
+                <label className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">🔄 Update<input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
               </div>
             </div>
-
             <h2 className="text-center text-xl font-bold">{showDetail.name}</h2>
-            <p className="text-center text-gray-400 text-xs mb-6">{showDetail.departments.join(", ")} • ₹{showDetail.salary}</p>
-
+            <p className="text-center text-gray-400 text-xs mb-4">{showDetail.role} • {showDetail.departments.join(", ")}</p>
             <div className="space-y-2 text-sm bg-black/50 p-4 rounded-xl">
-              <p>Phone: {showDetail.phone}</p>
-              <p>Email: {showDetail.email}</p>
-              <p>Location: {showDetail.location}</p>
+              <p><b>Email:</b> {showDetail.email}</p>
+              <p><b>Phone:</b> {showDetail.phone}</p>
+              <p><b>Address:</b> {showDetail.address}</p>
+              <p><b>Location:</b> {showDetail.location}</p>
+              <p><b>Salary:</b> ₹{showDetail.salary}</p>
+              <p><b>Status:</b> {showDetail.status}</p>
             </div>
-
-            <div className="mt-6">
-              <p className="text-xs text-gray-400 mb-2 text-center">Profile Update Options</p>
-              <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => setShowDetail(null)} className="bg-gray-700 py-3 rounded-xl text-sm font-bold">Cancel</button>
-                <button onClick={() => { setForm(showDetail); setEditId(showDetail.id); setShowDetail(null); setShowForm(true) }} className="bg-blue-600 py-3 rounded-xl text-sm font-bold">Update Profile</button>
-                <button onClick={() => handleDelete(showDetail.id)} className="bg-red-600 py-3 rounded-xl text-sm font-bold">Delete</button>
-              </div>
+            <div className="grid grid-cols-3 gap-2 mt-6">
+              <button onClick={() => setShowDetail(null)} className="bg-gray-700 py-3 rounded-xl text-sm font-bold">Cancel</button>
+              <button onClick={() => { setForm(showDetail); setEditId(showDetail.id); setShowDetail(null); setShowForm(true) }} className="bg-blue-600 py-3 rounded-xl text-sm font-bold">Update Profile</button>
+              <button onClick={() => handleDelete(showDetail.id)} className="bg-red-600 py-3 rounded-xl text-sm font-bold">Delete</button>
             </div>
           </div>
         </div>
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#0f172a] p-6 rounded-2xl w-full max-w-md border border-gray-700 my-8">
-            <h2 className="font-bold mb-4">{editId ? "Update Profile" : "Add Employee"}</h2>
+            <h2 className="font-bold mb-4">{editId ? "Update Profile - FULL FORM" : "Add Employee - FULL FORM"}</h2>
             
             <div className="flex flex-col items-center mb-4">
               <img src={form.photo} className="w-20 h-20 rounded-full object-cover border-2 border-blue-600 mb-2" />
-              <label className="bg-blue-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
-                {editId ? "Change Photo" : "Add Photo"} / Update
-                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-              </label>
+              <label className="bg-blue-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">Profile Upload / Change<input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
             </div>
 
-            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email ID - ex: abc@techforce.com" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone Number - ex: 9876543210" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Full Address - ex: Sector 44, Gurugram" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Location - ex: Gurugram" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
+            <input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="Role - ex: Developer" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
             <input value={form.salary} onChange={e => setForm({ ...form, salary: e.target.value })} placeholder="Salary" type="number" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
-            
-            <p className="text-xs text-gray-400 mb-2">Departments (Multiple + Others):</p>
+
+            <p className="text-xs text-gray-400 mb-2 mt-3">Departments - Multiple + Others:</p>
             <div className="flex flex-wrap gap-2 mb-3">
               {allDepts.map(d => <button key={d} onClick={() => toggleDept(d)} className={`px-3 py-1.5 rounded-full text-xs border ${form.departments.includes(d) ? "bg-blue-600 border-blue-600" : "bg-gray-900 border-gray-700 text-gray-400"}`}>{d}</button>)}
-              <button onClick={() => toggleDept("Others")} className="px-3 py-1.5 rounded-full text-xs border bg-gray-900 border-yellow-700 text-yellow-400">+ Others</button>
+              <button onClick={() => toggleDept("Others")} className={`px-3 py-1.5 rounded-full text-xs border ${showCustomInput ? "bg-yellow-600 border-yellow-600" : "bg-gray-900 border-yellow-700 text-yellow-400"}`}>+ Others</button>
             </div>
             {showCustomInput && (
-              <div className="flex gap-2 mb-3">
-                <input value={customDept} onChange={e => setCustomDept(e.target.value)} placeholder="Naya department" className="flex-1 p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm" />
+              <div className="flex gap-2 mb-4 bg-black/50 p-2 rounded-xl border border-yellow-800">
+                <input value={customDept} onChange={e => setCustomDept(e.target.value)} placeholder="Naya department likho" className="flex-1 p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm" />
                 <button onClick={addCustomDept} className="bg-yellow-600 px-4 rounded-lg text-sm font-bold">Add</button>
               </div>
             )}
+            {form.departments.length > 0 && <p className="text-[11px] text-green-400 mb-4">Selected: {form.departments.join(", ")}</p>}
 
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => { setShowForm(false); setEditId(null) }} className="flex-1 bg-gray-800 py-3 rounded-xl text-sm font-bold">Cancel</button>
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => { setShowForm(false); setEditId(null); setShowCustomInput(false) }} className="flex-1 bg-gray-800 py-3 rounded-xl text-sm font-bold">Cancel</button>
               <button onClick={handleSave} className="flex-1 bg-green-600 py-3 rounded-xl font-bold text-sm">{editId ? "Update ✓" : "Save ✓"}</button>
             </div>
           </div>
