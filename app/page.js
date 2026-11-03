@@ -10,11 +10,9 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [customDept, setCustomDept] = useState("")
   const [showCustomInput, setShowCustomInput] = useState(false)
-  
   const [allDepts, setAllDepts] = useState(["IT", "HR", "Sales", "Marketing", "Finance", "Operations"])
-  
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=", status: "Active"
+    name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active"
   })
 
   useEffect(() => {
@@ -34,54 +32,55 @@ export default function Home() {
     setEmployees(data)
   }
 
-  const saveDepts = (depts) => {
-    setAllDepts(depts)
-    localStorage.setItem("ems-depts", JSON.stringify(depts))
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setForm(p => ({ ...p, photo: reader.result }))
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSave = () => {
     if (!form.name || !form.salary || form.departments.length === 0) return alert("Name, Salary, Department required!")
     let newList
     if (editId) {
-      newList = employees.map(e => e.id === editId ? { ...e, ...form } : e)
+      newList = employees.map(ev => ev.id === editId ? { ...ev, ...form } : ev)
     } else {
-      newList = [...employees, { ...form, id: Date.now(), photo: form.photo + Date.now() }]
+      newList = [...employees, { ...form, id: Date.now() }]
     }
     saveData(newList)
     setShowForm(false); setEditId(null); setShowCustomInput(false); setCustomDept("")
-    setForm({ name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=", status: "Active" })
+    setForm({ name: "", email: "", phone: "", salary: "", location: "", role: "", departments: [], photo: "https://i.pravatar.cc/150?u=11", status: "Active" })
   }
 
   const handleDelete = (id) => {
     if (!isAdmin) return alert("Admin login karo!")
     if (confirm("Delete permanently?")) {
-      saveData(employees.filter(e => e.id !== id))
+      saveData(employees.filter(ev => ev.id !== id))
       setShowDetail(null)
     }
   }
 
   const toggleDept = (d) => {
-    if (d === "Others") {
-      setShowCustomInput(!showCustomInput)
-      return
-    }
+    if (d === "Others") { setShowCustomInput(!showCustomInput); return }
     setForm(p => ({ ...p, departments: p.departments.includes(d) ? p.departments.filter(x => x !== d) : [...p.departments, d] }))
   }
 
   const addCustomDept = () => {
-    if (!customDept.trim()) return alert("Department naam likho!")
+    if (!customDept.trim()) return alert("Naam likho!")
     const newDept = customDept.trim()
-    if (allDepts.includes(newDept)) return alert("Ye department pehle se hai!")
     const newDepts = [...allDepts, newDept]
-    saveDepts(newDepts)
+    setAllDepts(newDepts)
+    localStorage.setItem("ems-depts", JSON.stringify(newDepts))
     setForm(p => ({ ...p, departments: [...p.departments, newDept] }))
-    setCustomDept("")
-    setShowCustomInput(false)
+    setCustomDept(""); setShowCustomInput(false)
   }
 
-  const totalSalary = employees.reduce((s, e) => s + (parseInt(e.salary) || 0), 0)
-  const allDeptsInUse = [...new Set(employees.flatMap(e => e.departments))]
-  const filtered = employees.filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
+  const totalSalary = employees.reduce((s, ev) => s + (parseInt(ev.salary) || 0), 0)
+  const allDeptsInUse = [...new Set(employees.flatMap(ev => ev.departments))]
+  const filtered = employees.filter(ev => ev.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className="min-h-screen bg-black text-white p-4 pb-24">
@@ -91,17 +90,17 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800"><p className="text-gray-400 text-[11px]">Total Employees</p><p className="text-2xl font-bold mt-1">{employees.length}</p></div>
-        <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800"><p className="text-gray-400 text-[11px]">Total Salary</p><p className="text-2xl font-bold mt-1">₹{totalSalary.toLocaleString()}</p></div>
+        <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800"><p className="text-gray-400 text-[11px]">Total Employees</p><p className="text-2xl font-bold">{employees.length}</p></div>
+        <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800"><p className="text-gray-400 text-[11px]">Total Salary</p><p className="text-2xl font-bold">₹{totalSalary.toLocaleString()}</p></div>
       </div>
 
       <div className="bg-[#0f172a] p-4 rounded-2xl border border-gray-800 mb-4">
         <p className="text-sm font-bold">Departments - {allDeptsInUse.length}</p>
-        <div className="flex flex-wrap gap-2 mt-2">{allDeptsInUse.map(d => <span key={d} className="bg-gray-800 px-3 py-1 rounded-full text-xs">{d} ({employees.filter(e => e.departments.includes(d)).length})</span>)}</div>
+        <div className="flex flex-wrap gap-2 mt-2">{allDeptsInUse.map(d => <span key={d} className="bg-gray-800 px-3 py-1 rounded-full text-xs">{d}</span>)}</div>
       </div>
 
       <div className="flex gap-2 mb-4">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search employee..." className="flex-1 bg-[#0f172a] border border-gray-800 p-3 rounded-xl text-sm" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="flex-1 bg-[#0f172a] border border-gray-800 p-3 rounded-xl text-sm" />
         {isAdmin && <button onClick={() => setShowForm(true)} className="bg-blue-600 px-5 rounded-xl text-sm font-bold">+ Add</button>}
       </div>
 
@@ -124,13 +123,7 @@ export default function Home() {
           <div className="bg-[#0f172a] rounded-2xl p-6 border border-gray-800">
             <img src={showDetail.photo} className="w-28 h-28 rounded-full mx-auto mb-4" />
             <h2 className="text-center text-xl font-bold">{showDetail.name}</h2>
-            <p className="text-center text-gray-400 text-xs mb-6">{showDetail.role} • {showDetail.departments.join(", ")}</p>
-            <div className="space-y-3 text-sm bg-black/50 p-4 rounded-xl">
-              <p><span className="text-gray-500">Salary:</span> ₹{showDetail.salary}</p>
-              <p><span className="text-gray-500">Email:</span> {showDetail.email}</p>
-              <p><span className="text-gray-500">Phone:</span> {showDetail.phone}</p>
-              <p><span className="text-gray-500">Departments:</span> {showDetail.departments.join(", ")}</p>
-            </div>
+            <p className="text-center text-gray-400 text-xs mb-6">{showDetail.departments.join(", ")}</p>
             <div className="grid grid-cols-3 gap-3 mt-6">
               <button onClick={() => setShowDetail(null)} className="bg-gray-700 py-3 rounded-xl font-bold text-sm">Cancel</button>
               <button onClick={() => { setForm(showDetail); setEditId(showDetail.id); setShowDetail(null); setShowForm(true) }} className="bg-blue-600 py-3 rounded-xl font-bold text-sm">Edit</button>
@@ -141,9 +134,20 @@ export default function Home() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] p-6 rounded-2xl w-full max-w-md border border-gray-700">
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0f172a] p-6 rounded-2xl w-full max-w-md border border-gray-700 my-8">
             <h2 className="font-bold mb-4">{editId ? "Edit Employee" : "Add Employee"}</h2>
+            
+            {/* PROFILE PHOTO UPLOAD OPTION */}
+            <div className="flex flex-col items-center mb-4">
+              <img src={form.photo} className="w-20 h-20 rounded-full object-cover border-2 border-blue-600 mb-2" />
+              <label className="bg-blue-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer">
+                + Profile Photo Add / Upload
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+              </label>
+              <p className="text-[10px] text-gray-500 mt-1">Gallery se photo select karo</p>
+            </div>
+
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
             <input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="Role" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
             <input value={form.salary} onChange={e => setForm({ ...form, salary: e.target.value })} placeholder="Salary" type="number" className="w-full p-3 rounded-xl bg-gray-900 border border-gray-800 mb-2 text-sm" />
@@ -157,15 +161,13 @@ export default function Home() {
             </div>
 
             {showCustomInput && (
-              <div className="flex gap-2 mb-4 bg-black/50 p-2 rounded-xl border border-yellow-800">
-                <input value={customDept} onChange={e => setCustomDept(e.target.value)} placeholder="Naya department likho ex: Legal" className="flex-1 p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm" />
+              <div className="flex gap-2 mb-4">
+                <input value={customDept} onChange={e => setCustomDept(e.target.value)} placeholder="Naya department likho" className="flex-1 p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm" />
                 <button onClick={addCustomDept} className="bg-yellow-600 px-4 rounded-lg text-sm font-bold">Add</button>
               </div>
             )}
 
-            {form.departments.length > 0 && <p className="text-[11px] text-green-400 mb-4">Selected: {form.departments.join(", ")}</p>}
-
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <button onClick={() => { setShowForm(false); setEditId(null); setShowCustomInput(false) }} className="flex-1 bg-gray-800 py-3 rounded-xl text-sm font-bold">Cancel</button>
               <button onClick={handleSave} className="flex-1 bg-green-600 py-3 rounded-xl font-bold text-sm">Save ✓</button>
             </div>
